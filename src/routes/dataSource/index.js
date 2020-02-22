@@ -91,7 +91,7 @@ router.del('/:dataSourceId', CheckLogin, GatewayOperateToken, async ctx =>{
     let transaction;
     try {
       transaction = await Models.sequelize.transaction();
-      await Models.DataSource.destroy({where: {id: ctx.params.dataSourceId}, transaction});
+      await dataSources.destroy();
       await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).DataSourceDelete(ctx.params.dataSourceId);
       await transaction.commit();
       ctx.body = "delete data source success";

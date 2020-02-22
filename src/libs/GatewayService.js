@@ -19,7 +19,6 @@ class GatewayService {
         "Authentication": this.token,
       },
       body: {
-        name: functionObj.id,
         function: decodeFunctionScript,
         identifier: functionObj.identifier,
         version: functionObj.version,

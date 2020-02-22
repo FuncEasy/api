@@ -26,6 +26,7 @@ Function.init({
   },
   deps: {
     type: Sequelize.TEXT,
+    defaultValue: "none"
   },
   handler: {
     type: Sequelize.STRING,
