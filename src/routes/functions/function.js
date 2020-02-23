@@ -115,7 +115,7 @@ router.post('/scriptUpload/:funcId', CheckLogin, async ctx => {
   let customerScript = new CustomerScript(funcId);
   try {
     await customerScript.saveUploadFile(ctx);
-    await func.update({status: func.status === 'basic' ? 'uploaded' : 'redeploy', contentType});
+    await func.update({status: func.status === 'deployed' ? 'redeploy' : 'uploaded', contentType});
     ctx.body = 'upload success';
   } catch (e) {
     ctx.status = 500;
@@ -123,6 +123,43 @@ router.post('/scriptUpload/:funcId', CheckLogin, async ctx => {
       err: e,
       message: "Server Error"
     };
+  }
+});
+
+router.get('/script/:funcId', CheckLogin, async ctx => {
+  let user = ctx.USER;
+  let funcId = ctx.params.funcId;
+  let funcArr = await user.getFunctions({ where: {id: funcId} });
+  if (funcArr.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Function"
+    };
+    return;
+  }
+  let func = funcArr[0];
+  let contentType, functionScriptBuffer, decodeFunctionScript;
+  try {
+    functionScriptBuffer = CustomerScript.getUploadedFile(func.id);
+  } catch (e) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Function Script"
+    };
+    return
+  }
+  if (func.contentType === "application/zip") {
+    contentType = 'zip';
+    decodeFunctionScript = functionScriptBuffer.toString('base64')
+  } else {
+    contentType = 'text';
+    decodeFunctionScript = functionScriptBuffer.toString('utf8')
+  }
+  ctx.body = {
+    contentType,
+    decodeFunctionScript,
   }
 });
 
@@ -172,7 +209,7 @@ router.get('/deploy/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
   }
 });
 
-router.get('/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
+router.get('/status/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
   let funcId = ctx.params.funcId;
   let user = ctx.USER;
   let funcArr = await user.getFunctions({ where: {id: funcId} });
@@ -184,29 +221,16 @@ router.get('/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
     };
     return;
   }
-  let funcObj = funcArr[0];
-  let runtimeObj = await funcObj.getRuntime();
-  let namespaceObj = await funcObj.getNameSpace();
-  let dataSourceObj = await funcObj.getDataSource();
   try {
     let remote = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionGet(funcId);
     ctx.body = {
-      id: funcObj.id,
-      namespace: namespaceObj.name,
-      identifier: funcObj.identifier,
-      version: funcObj.version,
-      runtime: `${runtimeObj.lang}:${runtimeObj.version}`,
-      handler: funcObj.handler,
-      contentType: funcObj.contentType,
-      timeout: funcObj.timeout,
-      size: funcObj.size,
-      dataSource: dataSourceObj.name,
       podStatus: remote.data.status.podStatus.map(podItem => ({
         podName: podItem.podName,
         podPhase: podItem.podPhase,
         initContainerStatuses: podItem.initContainerStatuses.map(initItem => ({
           name: initItem.name,
           ready: initItem.ready,
+          state: initItem.state,
           restartCount: initItem.restartCount,
         })),
         containerStatuses: podItem.containerStatuses.map(item => ({
@@ -398,6 +422,53 @@ router.get('/redeploy/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
       message: "Server Error"
     };
   }
+});
+
+router.get('/:nsId/functions', CheckLogin, async ctx => {
+  let user = ctx.USER;
+  let res = await user.getNameSpaces({where: {id: ctx.params.nsId}});
+  if (res.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Namespace"
+    };
+    return;
+  }
+  let ns = res[0];
+  let functions = await ns.getFunctions({
+    include: [{
+      model: Models.Runtime,
+      as: 'Runtime',
+    },{
+      model: Models.DataSource,
+      as: 'DataSource'
+    }]
+  });
+  ctx.body = functions
+});
+
+router.get('/:funcId', CheckLogin, async ctx => {
+  let funcId = ctx.params.funcId;
+  let user = ctx.USER;
+  let funcArr = await user.getFunctions({
+    where: {id: funcId},
+    include: [{
+      model: Models.Runtime,
+      as: 'Runtime',
+    },{
+      model: Models.DataSource,
+      as: 'DataSource'
+    }]
+  });
+  if (funcArr.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Function"
+    };
+  }
+  ctx.body = funcArr[0]
 });
 
 module.exports = router;
