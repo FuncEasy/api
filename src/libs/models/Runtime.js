@@ -16,6 +16,18 @@ Runtime.init({
     type: Sequelize.STRING,
     allowNull: false,
   },
+  suffix: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  depsName: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  depsLang: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  }
 }, {
   sequelize,
   modelName: 'Runtime',

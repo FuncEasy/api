@@ -175,6 +175,18 @@ router.get('/deploy/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
     };
     return;
   }
+  const { force } = ctx.query;
+  if (force !== undefined) {
+    try {
+      await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionDelete(funcId);
+    } catch (e) {
+      ctx.status = e.statusCode || 500;
+      ctx.body = {
+        err: e,
+        message: "Server Error"
+      };
+    }
+  }
   let func = funcArr[0];
   const functionScriptBuffer = CustomerScript.getUploadedFile(func.id);
   const runtimeObj = await func.getRuntime();
@@ -278,6 +290,32 @@ router.del('/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
   }
 });
 
+router.del('/instance/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
+  let funcId = ctx.params.funcId;
+  let user = ctx.USER;
+  let funcArr = await user.getFunctions({ where: {id: funcId} });
+  if (funcArr.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Function"
+    };
+    return;
+  }
+  let funcObj = funcArr[0];
+  try {
+    await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionDelete(funcId);
+    await funcObj.update({status: "uploaded"});
+    ctx.body = "delete function success"
+  } catch (e) {
+    ctx.status = e.statusCode || 500;
+    ctx.body = {
+      err: e,
+      message: "Server Error"
+    };
+  }
+});
+
 router.put('/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
   let {
     name, desc, version, ns_id, deps, size, timeout, handler, data_source_id
@@ -324,6 +362,7 @@ router.put('/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
     dataSourceObj = dataSourceArr[0]
   }
   let patch = {};
+  let needRedeploy = false;
   patch.identifier = `${name}.${namespace.name}.${user.username}`;
   if (name) {
     patch.name = name;
@@ -334,26 +373,29 @@ router.put('/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
   if (version !== undefined) {
     patch.version = version;
   }
-  if (deps !== undefined) {
+  if (deps !== undefined && deps !== funcObj.deps) {
     patch.deps = deps === "" ? "none" : deps;
-    patch.status = "redeploy"
+    needRedeploy = true
   }
-  if (size !== undefined) {
+  if (size !== undefined && size !== funcObj.size) {
     patch.size = size;
-    patch.status = "redeploy"
+    needRedeploy = true;
   }
   if (desc !== undefined) {
     patch.desc = desc;
   }
-  if (timeout) {
+  if (timeout && timeout !== funcObj.timeout) {
     patch.timeout = timeout;
-    patch.status = "redeploy"
+    needRedeploy = true;
   }
-  if (handler) {
+  if (handler && handler !== funcObj.handler) {
     patch.handler = handler;
-    patch.status = "redeploy"
+    needRedeploy = true;
   }
-  if (data_source_id) {
+  if (data_source_id && data_source_id !== funcObj.DataSourceId) {
+    needRedeploy = true;
+  }
+  if (needRedeploy && funcObj.status === "deployed") {
     patch.status = "redeploy"
   }
   let transaction;
