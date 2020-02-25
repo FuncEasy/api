@@ -30,6 +30,10 @@ class CustomerScript {
       });
     });
   }
+
+  saveOnlineFile(data) {
+    fs.writeFileSync(this.scriptPath, data)
+  }
 }
 
 module.exports = CustomerScript;

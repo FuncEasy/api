@@ -35,22 +35,37 @@ class GatewayService {
     return client(options);
   }
 
-  FunctionCall(funcId, data) {
-    let options = {
-      uri: `${this.url}/function/call/${funcId}`,
-      method: 'POST',
-      headers: {
-        "Authentication": this.token,
-      },
-      body: data,
-      json: true,
-    };
+  FunctionCall(funcId, method, data) {
+    let options;
+    if (method === "GET") {
+      options = {
+        uri: `${this.url}/function/call/${funcId}`,
+        method: 'GET',
+        qs: {
+          query: this.queryToString(data)
+        },
+        headers: {
+          "Authentication": this.token,
+        },
+        json: true,
+      };
+    } else {
+      options = {
+        uri: `${this.url}/function/call/${funcId}`,
+        method: 'POST',
+        headers: {
+          "Authentication": this.token,
+        },
+        body: data,
+        json: true,
+      };
+    }
     return client(options);
   }
 
   FunctionGet(funcId) {
     let options = {
-      uri: `${this.url}/function/${funcId}`,
+      uri: `${this.url}/function/instance/${funcId}`,
       headers: {
         "Authentication": this.token,
       },
@@ -126,6 +141,14 @@ class GatewayService {
       json: true,
     };
     return client(options);
+  }
+
+  queryToString(query) {
+    let arr = [];
+    Object.keys(query).forEach(key => {
+      arr.push(`${key}=${query[key]}`)
+    });
+    return arr.join("&")
   }
 }
 

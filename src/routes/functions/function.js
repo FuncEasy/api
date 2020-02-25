@@ -4,6 +4,7 @@ const CheckLogin = require('../../middleware/CheckLogin');
 const GatewayOperateToken = require('../../middleware/GatewayOperateToken');
 const CustomerScript = require('../../libs/CustomerScript');
 const GatewayService = require('../../libs/GatewayService');
+const FunctionAccess = require('../../middleware/FunctionAccess');
 const Models = require('../../libs/models');
 let router = new Router();
 router.post('/create', CheckLogin, async ctx => {
@@ -121,6 +122,35 @@ router.post('/scriptUpload/:funcId', CheckLogin, async ctx => {
     ctx.status = 500;
     ctx.body = {
       err: e,
+      message: "Server Error"
+    };
+  }
+});
+
+router.post('/scriptOnline/:funcId', CheckLogin, async ctx => {
+  let funcId = ctx.params.funcId;
+  let { script } = ctx.request.body;
+  let user = ctx.USER;
+  let funcArr = await user.getFunctions({ where: {id: funcId} });
+  if (funcArr.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Function"
+    };
+    return;
+  }
+  let func = funcArr[0];
+  let contentType = "application/text";
+  let customerScript = new CustomerScript(funcId);
+  try {
+    await customerScript.saveOnlineFile(script);
+    await func.update({status: func.status === 'deployed' || func.status === 'redeploy' ? 'redeploy' : 'uploaded', contentType});
+    ctx.body = 'upload success';
+  } catch (e) {
+    ctx.status = 500;
+    ctx.body = {
+      err: e.message || '',
       message: "Server Error"
     };
   }
@@ -501,6 +531,9 @@ router.get('/:funcId', CheckLogin, async ctx => {
     },{
       model: Models.DataSource,
       as: 'DataSource'
+    },{
+      model: Models.NameSpace,
+      as: 'NameSpace'
     }]
   });
   if (funcArr.length <= 0) {
@@ -511,6 +544,36 @@ router.get('/:funcId', CheckLogin, async ctx => {
     };
   }
   ctx.body = funcArr[0]
+});
+
+router.get('/call/:username/:nsName/:funcName/:version', FunctionAccess, GatewayOperateToken, async ctx => {
+  try {
+    let res = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionCall(ctx.funcId, "GET" ,ctx.query);
+    ctx.body = {
+      data: res.res
+    }
+  } catch (e) {
+    ctx.status = 500;
+    ctx.body = {
+      err: e.response.body.error,
+      message: e.response.body.message
+    }
+  }
+});
+
+router.post('/call/:username/:nsName/:funcName/:version', FunctionAccess, GatewayOperateToken, async ctx => {
+  try {
+    let res = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionCall(ctx.funcId, "POST", ctx.request.body);
+    ctx.body = {
+      data: res.res
+    }
+  } catch (e) {
+    ctx.status = 500;
+    ctx.body = {
+      err: e.response.body.error,
+      message: e.response.body.message
+    }
+  }
 });
 
 module.exports = router;
