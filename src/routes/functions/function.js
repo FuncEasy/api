@@ -542,6 +542,7 @@ router.get('/:funcId', CheckLogin, async ctx => {
       err: "Not Found",
       message: "NotFound:Function"
     };
+    return;
   }
   ctx.body = funcArr[0]
 });
@@ -573,6 +574,29 @@ router.post('/call/:username/:nsName/:funcName/:version', FunctionAccess, Gatewa
       err: e.response.body.error,
       message: e.response.body.message
     }
+  }
+});
+
+router.post('/access/token/create', CheckLogin, async  ctx => {
+  let user = ctx.USER;
+  let token = uuidV4();
+  try {
+    await user.update({functionToken: token});
+    ctx.body = token;
+  } catch (e) {
+    ctx.status = 500;
+    ctx.body = {
+      err: e,
+      message: "Server Error"
+    }
+  }
+});
+
+router.get('/access/token', CheckLogin, async ctx => {
+  let user = ctx.USER;
+  ctx.body = {
+    token: user.functionToken,
+    createdAt: user.updatedAt,
   }
 });
 
