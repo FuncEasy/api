@@ -116,7 +116,7 @@ router.post('/scriptUpload/:funcId', CheckLogin, async ctx => {
   let customerScript = new CustomerScript(funcId);
   try {
     await customerScript.saveUploadFile(ctx);
-    await func.update({status: func.status === 'deployed' ? 'redeploy' : 'uploaded', contentType});
+    await func.update({status: func.status === 'deployed' || func.status === 'redeploy' ? 'redeploy' : 'uploaded', contentType});
     ctx.body = 'upload success';
   } catch (e) {
     ctx.status = 500;
@@ -307,14 +307,14 @@ router.del('/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
   }
   let funcObj = funcArr[0];
   try {
-    await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionDelete(funcId);
+    if (funcObj.status === 'deployed' || funcObj.status === 'redeploy')
+      await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionDelete(funcId);
     await funcObj.destroy();
     ctx.body = "delete function success"
   } catch (e) {
-    console.log(e);
     ctx.status = e.statusCode || 500;
     ctx.body = {
-      err: e,
+      err: e.message,
       message: "Server Error"
     };
   }

@@ -89,9 +89,10 @@ router.del('/:dataSourceId', CheckLogin, GatewayOperateToken, async ctx =>{
   const dataSources = await ctx.USER.getDataSources({where: {id: ctx.params.dataSourceId}});
   if (dataSources.length > 0) {
     let transaction;
+    let dataSource = dataSources[0];
     try {
       transaction = await Models.sequelize.transaction();
-      await dataSources.destroy();
+      await dataSource.destroy({transaction});
       await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).DataSourceDelete(ctx.params.dataSourceId);
       await transaction.commit();
       ctx.body = "delete data source success";
@@ -99,7 +100,7 @@ router.del('/:dataSourceId', CheckLogin, GatewayOperateToken, async ctx =>{
       await transaction.rollback();
       ctx.status = e.statusCode || 500;
       ctx.body = {
-        err: e,
+        err: e.message,
         message: "Server Error"
       };
     }
@@ -113,7 +114,27 @@ router.del('/:dataSourceId', CheckLogin, GatewayOperateToken, async ctx =>{
 });
 
 router.get('/', CheckLogin, async ctx => {
-  ctx.body = await ctx.USER.getDataSources();
+  ctx.body = await ctx.USER.getDataSources({
+    include: [{
+      model: Models.Function,
+      as: 'Functions'
+    }]
+  });
+});
+
+router.get('/:dataSourceId', CheckLogin, async ctx => {
+  let dataSourceArr = await ctx.USER.getDataSources({
+    where: {id: ctx.params.dataSourceId}
+  });
+  if (dataSourceArr.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:DataSource"
+    };
+    return;
+  }
+  ctx.body = dataSourceArr[0]
 });
 
 module.exports = router;
