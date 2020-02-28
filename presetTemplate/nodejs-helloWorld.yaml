@@ -1,0 +1,14 @@
+name: hello-world
+runtime: nodeJS
+version: "10-*"
+handler: hello-world.hello
+desc: |
+  this is a simple hello world function
+lang: javascript
+template: |
+  module.exports = {
+    hello: function(event, ctx) {
+      return "hello world";
+    }
+  }
+dependencies:

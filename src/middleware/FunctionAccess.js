@@ -31,7 +31,8 @@ module.exports = async function (ctx, next) {
   }
   let func = funcArr[0];
   if (func.private) {
-    const { token } = ctx.query;
+    let { token } = ctx.query;
+    if (!token) token = ctx.request.body.token;
     if (!token) {
       if (funcArr.length <= 0) {
         ctx.status = 401;

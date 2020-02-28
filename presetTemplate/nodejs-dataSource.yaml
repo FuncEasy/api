@@ -1,0 +1,23 @@
+name: DataSource-CRUD
+runtime: nodeJS
+version: "10-*"
+lang: javascript
+handler: DataSource-CRUD.find
+desc: |
+  the simple data source CRUD function
+template: |
+  module.exports = {
+    find: async function(event, ctx) {
+      return await event.DSS.find(event.data.where);
+    },
+    create: async function(event, ctx) {
+      return await event.DSS.create(event.data.data);
+    },
+    update: async function(event, ctx) {
+      return await event.DSS.update(event.data.data, event.data.where);
+    },
+    delete: async function(event, ctx) {
+      return await event.DSS.delete(event.data.where);
+    },
+  }
+dependencies:

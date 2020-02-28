@@ -8,6 +8,6 @@ module.exports = async function (ctx, next) {
     tokenPath = '/gateway_access/gateway.token'
   }
   ctx.GATEWAY_TOKEN = fs.readFileSync(tokenPath, 'utf8');
-  ctx.GATEWAY_SERVICE = process.env.NODE_ENV === 'dev' ? '127.0.0.1:8082' : 'funceasy-gateway-service';
+  ctx.GATEWAY_SERVICE = process.env.NODE_ENV === 'dev' ? '127.0.0.1:30123' : 'funceasy-gateway-service';
   return next()
 };

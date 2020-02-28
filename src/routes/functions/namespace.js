@@ -40,7 +40,11 @@ router.post('/create', CheckLogin, async ctx => {
       ctx.body = ns;
     } catch (e) {
       await transaction.rollback();
-      throw (e);
+      ctx.status = 500;
+      ctx.body = {
+        err: e,
+        message: "Server Error"
+      };
     }
   })();
 });
@@ -90,6 +94,38 @@ router.del('/:nsId', CheckLogin, GatewayOperateToken, async ctx => {
     ctx.body = "delete namespace success";
   } catch (e) {
     await transaction.rollback();
+    ctx.status = 500;
+    ctx.body = {
+      err: e,
+      message: "Server Error"
+    };
+  }
+});
+
+router.put('/:nsId', CheckLogin, async ctx => {
+  let { name, desc } = ctx.request.body;
+  if (!name) {
+    ctx.status = 422;
+    ctx.body = {
+      err: "Invalid Input",
+      message: "Required:name"
+    };
+    return;
+  }
+  let user = ctx.USER;
+  let res = await user.getNameSpaces({where: {id: ctx.params.nsId}});
+  if (res.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Namespace"
+    };
+    return;
+  }
+  let ns = res[0];
+  try {
+    await ns.update({name, desc})
+  } catch (e) {
     ctx.status = 500;
     ctx.body = {
       err: e,

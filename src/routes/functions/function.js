@@ -9,7 +9,7 @@ const Models = require('../../libs/models');
 let router = new Router();
 router.post('/create', CheckLogin, async ctx => {
   let {
-    name, desc, version, runtime_id, ns_id, handler, deps, data_source_id, timeout, size,
+    name, desc, version, runtime_id, ns_id, handler, deps, data_source_id, timeout, size, template
   } = ctx.request.body;
   if (!name || !version || !runtime_id || !ns_id || !handler) {
     ctx.status = 422;
@@ -75,6 +75,11 @@ router.post('/create', CheckLogin, async ctx => {
     };
     return;
   }
+  if (template) {
+    data.deps = template.deps ? template.deps : 'none';
+    data.contentType = 'application/text';
+    data.status = 'uploaded';
+  }
   await (async () => {
     let transaction;
     try {
@@ -85,6 +90,9 @@ router.post('/create', CheckLogin, async ctx => {
       await func.setRuntime(runtime, {transaction});
       if (dataSourceObj) {
         await func.setDataSource(dataSourceObj, {transaction});
+      }
+      if (template) {
+        new CustomerScript(func.id).saveOnlineFile(template.template);
       }
       await transaction.commit();
       ctx.body = func;
@@ -226,7 +234,7 @@ router.get('/deploy/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
     function: functionScriptBuffer,
     identifier: func.identifier,
     version: func.version,
-    runtime: `${runtimeObj.lang}:${runtimeObj.version}`,
+    runtime: `${runtimeObj.name}:${runtimeObj.version}`,
     deps: func.deps,
     handler: func.handler,
     contentType: func.contentType === "application/zip" ? "zip" : "text",
@@ -551,7 +559,7 @@ router.get('/call/:username/:nsName/:funcName/:version', FunctionAccess, Gateway
   try {
     let res = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionCall(ctx.funcId, "GET" ,ctx.query);
     ctx.body = {
-      data: res.res
+      data: res ? res.res : '// no data'
     }
   } catch (e) {
     ctx.status = 500;
@@ -566,7 +574,7 @@ router.post('/call/:username/:nsName/:funcName/:version', FunctionAccess, Gatewa
   try {
     let res = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionCall(ctx.funcId, "POST", ctx.request.body);
     ctx.body = {
-      data: res.res
+      data: res ? res.res : '// no data'
     }
   } catch (e) {
     ctx.status = 500;

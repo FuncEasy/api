@@ -31,6 +31,7 @@ User.associate = models => {
   User.hasMany(models.Function);
   User.hasMany(models.APIToken);
   User.hasMany(models.NameSpace);
-  User.hasMany(models.DataSource)
+  User.hasMany(models.DataSource);
+  User.hasMany(models.Template);
 };
 module.exports = User;

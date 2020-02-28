@@ -1,5 +1,6 @@
 const Router = require('koa-router');
 const Function = require('./functions/function');
+const Template = require('./functions/template');
 const DataSource = require('./dataSource');
 const Runtime = require('./runtime');
 const Namespaces = require('./functions/namespace');
@@ -10,6 +11,7 @@ let router = new Router();
 router.use('/runtime', Runtime.routes(), Runtime.allowedMethods());
 router.use('/dataSource', DataSource.routes(), DataSource.allowedMethods());
 router.use('/function', Function.routes(), Function.allowedMethods());
+router.use('/template', Template.routes(), Template.allowedMethods());
 router.use('/namespace', Namespaces.routes(), Namespaces.allowedMethods());
 router.use('/auth', Register.routes(), Register.allowedMethods());
 router.use('/auth', Auth.routes(), Auth.allowedMethods());

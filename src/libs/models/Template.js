@@ -1,8 +1,8 @@
 const Sequelize = require('sequelize');
 const sequelize = require('./sequelize');
 const Model = Sequelize.Model;
-class Runtime extends Model {}
-Runtime.init({
+class Template extends Model {}
+Template.init({
   id: {
     type: Sequelize.STRING,
     allowNull: false,
@@ -12,33 +12,32 @@ Runtime.init({
     type: Sequelize.STRING,
     allowNull: false,
   },
-  lang: {
+  desc: {
     type: Sequelize.STRING,
+  },
+  handler: {
+    type: Sequelize.STRING,
+  },
+  template: {
+    type: Sequelize.TEXT,
     allowNull: false,
   },
-  version: {
-    type: Sequelize.STRING,
-    allowNull: false,
+  deps: {
+    type: Sequelize.TEXT,
+    defaultValue: "none"
   },
-  suffix: {
-    type: Sequelize.STRING,
-    allowNull: false,
-  },
-  depsName: {
-    type: Sequelize.STRING,
-    allowNull: false,
-  },
-  depsLang: {
-    type: Sequelize.STRING,
+  private: {
+    type: Sequelize.INTEGER,
+    defaultValue: 1,
     allowNull: false,
   }
 }, {
   sequelize,
-  modelName: 'Runtime',
+  modelName: 'Template',
   freezeTableName: true,
 });
-Runtime.associate = models => {
-  Runtime.hasMany(models.Function);
-  Runtime.hasMany(models.Template);
+Template.associate = models => {
+  Template.belongsTo(models.User);
+  Template.belongsTo(models.Runtime);
 };
-module.exports = Runtime;
+module.exports = Template;
