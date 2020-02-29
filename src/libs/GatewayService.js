@@ -99,6 +99,20 @@ class GatewayService {
     return client(options);
   }
 
+  FunctionLogs(funcId, lines) {
+    let options = {
+      uri: `${this.url}/function/logs/${funcId}`,
+      headers: {
+        "Authentication": this.token,
+      },
+      qs: {
+        lines,
+      },
+      json: true,
+    };
+    return client(options);
+  }
+
   DataSourceCreate(dataSourceId, dataSourceDefine) {
     let options = {
       uri: `${this.url}/dataSource/create`,

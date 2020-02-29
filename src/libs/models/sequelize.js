@@ -6,6 +6,7 @@ const sequelize = new Sequelize('funceasy_web', username, password, {
   host: host,
   dialect: 'mysql',
   port: 3306,
+  timezone: '+08:00',
   pool: {
     max: 5,
     min: 0,

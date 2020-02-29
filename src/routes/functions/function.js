@@ -5,6 +5,7 @@ const GatewayOperateToken = require('../../middleware/GatewayOperateToken');
 const CustomerScript = require('../../libs/CustomerScript');
 const GatewayService = require('../../libs/GatewayService');
 const FunctionAccess = require('../../middleware/FunctionAccess');
+const Report = require('../../libs/Report');
 const Models = require('../../libs/models');
 let router = new Router();
 router.post('/create', CheckLogin, async ctx => {
@@ -301,6 +302,30 @@ router.get('/status/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
   }
 });
 
+router.get('/logs/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
+  let funcId = ctx.params.funcId;
+  let {lines} = ctx.query;
+  let user = ctx.USER;
+  let funcArr = await user.getFunctions({ where: {id: funcId} });
+  if (funcArr.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Function"
+    };
+    return;
+  }
+  try {
+    ctx.body = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionLogs(funcId, lines);
+  } catch (e) {
+    ctx.status = e.statusCode || 500;
+    ctx.body = {
+      err: e,
+      message: "Server Error"
+    };
+  }
+});
+
 router.del('/:funcId', CheckLogin, GatewayOperateToken, async ctx => {
   let funcId = ctx.params.funcId;
   let user = ctx.USER;
@@ -556,32 +581,46 @@ router.get('/:funcId', CheckLogin, async ctx => {
 });
 
 router.get('/call/:username/:nsName/:funcName/:version', FunctionAccess, GatewayOperateToken, async ctx => {
+  let handler = ctx.query.handler ? ctx.funcObj.handler.split('.')[0] + '.' + ctx.query.handler : ctx.funcObj.handler;
+  let report = new Report(ctx.funcId, ctx.funcObj);
   try {
+    let beginTime = +new Date();
     let res = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionCall(ctx.funcId, "GET" ,ctx.query);
+    let endTime = +new Date();
     ctx.body = {
       data: res ? res.res : '// no data'
-    }
+    };
+    report.reportSpeed(handler, endTime - beginTime).then().catch(e => console.log(e));
+    report.reportInvoke(handler, 1).then().catch(e => console.log(e))
   } catch (e) {
     ctx.status = 500;
     ctx.body = {
       err: e.response.body.error,
       message: e.response.body.message
-    }
+    };
+    report.reportInvoke(handler, 0).then().catch(e => console.log(e))
   }
 });
 
 router.post('/call/:username/:nsName/:funcName/:version', FunctionAccess, GatewayOperateToken, async ctx => {
+  let handler = ctx.request.body.handler ? ctx.funcObj.handler.split('.')[0] + '.' + ctx.request.body.handler : ctx.funcObj.handler;
+  let report = new Report(ctx.funcId, ctx.funcObj);
   try {
+    let beginTime = +new Date();
     let res = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionCall(ctx.funcId, "POST", ctx.request.body);
+    let endTime = +new Date();
     ctx.body = {
       data: res ? res.res : '// no data'
-    }
+    };
+    report.reportSpeed(handler, endTime - beginTime).then().catch(e => console.log(e));
+    report.reportInvoke(handler, 1).then().catch(e => console.log(e))
   } catch (e) {
     ctx.status = 500;
     ctx.body = {
       err: e.response.body.error,
       message: e.response.body.message
-    }
+    };
+    report.reportInvoke(handler, 0).then().catch(e => console.log(e))
   }
 });
 
@@ -605,6 +644,45 @@ router.get('/access/token', CheckLogin, async ctx => {
   ctx.body = {
     token: user.functionToken,
     createdAt: user.updatedAt,
+  }
+});
+
+router.get('/report/:funcId', CheckLogin, async ctx => {
+  let user = ctx.USER;
+  let funcId = ctx.params.funcId;
+  let funcArr = await user.getFunctions({where: {id: funcId}});
+  if (funcArr.length <= 0) {
+    ctx.status = 404;
+    ctx.body = {
+      err: "Not Found",
+      message: "NotFound:Function"
+    };
+    return;
+  }
+  let functionObj = funcArr[0];
+  let report = new Report(funcId, functionObj);
+  try {
+    let daysSpeedReports = await report.getReportTailDays('speed');
+    let daysInvokeReports = await report.getReportTailDays('invoke');
+    let weeksSpeedReports = await report.getReportByTailWeek('speed');
+    let weeksInvokeReports = await report.getReportByTailWeek('invoke');
+    ctx.body = {
+      daysReport: {
+        daysSpeedReports,
+        daysInvokeReports,
+      },
+      weeksReport: {
+        weeksSpeedReports,
+        weeksInvokeReports,
+      }
+    }
+  } catch (e) {
+    console.log(e);
+    ctx.status = 500;
+    ctx.body = {
+      err: e,
+      message: "Server Error"
+    }
   }
 });
 

@@ -7,6 +7,7 @@ const Models = {
   User: require('./User'),
   DataSource: require('./DataSource'),
   Template: require('./Template'),
+  Report: require('./Report'),
 };
 Object.keys(Models).forEach(key => {
   Models[key].associate(Models)

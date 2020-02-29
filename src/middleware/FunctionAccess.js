@@ -53,5 +53,6 @@ module.exports = async function (ctx, next) {
     }
   }
   ctx.funcId = func.id;
+  ctx.funcObj = func;
   return next();
 };

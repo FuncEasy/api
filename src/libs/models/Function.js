@@ -61,6 +61,7 @@ Function.associate = models => {
   Function.belongsTo(models.User);
   Function.belongsTo(models.NameSpace);
   Function.belongsTo(models.Runtime);
-  Function.belongsTo(models.DataSource)
+  Function.belongsTo(models.DataSource);
+  Function.hasMany(models.Report)
 };
 module.exports = Function;

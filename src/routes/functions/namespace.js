@@ -51,7 +51,12 @@ router.post('/create', CheckLogin, async ctx => {
 
 router.get('/', CheckLogin, async ctx => {
   let user = ctx.USER;
-  ctx.body = await user.getNameSpaces();
+  ctx.body = await user.getNameSpaces({
+    include:[{
+      model: Models.Function,
+      as: 'Functions'
+    }]
+  });
 });
 
 router.get('/:nsId', CheckLogin, async ctx =>{
