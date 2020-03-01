@@ -11,6 +11,11 @@ User.init({
   username: {
     type: Sequelize.STRING,
     allowNull: false,
+    unique: true,
+  },
+  access: {
+    type: Sequelize.INTEGER,
+    defaultValue: 0,
   },
   email: {
     type: Sequelize.STRING,

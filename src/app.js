@@ -4,7 +4,7 @@ const koaBody = require('koa-body');
 const logger = require('koa-logger');
 const RefreshToken = require('./middleware/RefreshToken');
 const Models = require('./libs/models');
-const port = process.env.API_SERVICE_PORT || 8080;
+const port = process.env.FUNCEASY_API_SERVICE_PORT || 8080;
 const handler = async (ctx, next) => {
   try {
     await next();
@@ -18,6 +18,7 @@ const handler = async (ctx, next) => {
 try {
   (async () => {
     await Models.sync();
+    await Models.root();
     const app = new Koa();
     app.use(koaBody({
       multipart: true,

@@ -1,5 +1,5 @@
 module.exports = async function (ctx, next) {
-  if (ctx.USER.username === "root") return next();
+  if (ctx.USER.access === 1) return next();
   else {
     ctx.status = 401;
     ctx.body = {
