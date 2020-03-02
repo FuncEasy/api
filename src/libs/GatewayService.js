@@ -5,6 +5,17 @@ class GatewayService {
     this.token = token;
   }
 
+  ConfigGet() {
+    let options = {
+      uri: `${this.url}/config/`,
+      headers: {
+        "Authentication": this.token,
+      },
+      json: true,
+    };
+    return client(options);
+  }
+
   FunctionDeploy(functionObj) {
     let decodeFunctionScript;
     if (functionObj.contentType === "zip") {
