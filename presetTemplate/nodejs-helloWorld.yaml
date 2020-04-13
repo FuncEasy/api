@@ -7,7 +7,12 @@ desc: |
 lang: javascript
 template: |
   module.exports = {
-    hello: function(event, ctx) {
+    // event contains request context and custome params
+    // context contains environment variables
+    // example:
+    // const {ctx, params} = event
+    // const {$timeout, $memory_limit} = context
+    hello: function(event, context) {
       return "hello world";
     }
   }

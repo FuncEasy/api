@@ -1,4 +1,5 @@
 const Koa = require('koa');
+const cors = require('koa2-cors');
 const router = require('./routes');
 const koaBody = require('koa-body');
 const logger = require('koa-logger');
@@ -20,6 +21,7 @@ try {
     await Models.sync();
     await Models.root();
     const app = new Koa();
+    app.use(cors());
     app.use(koaBody({
       multipart: true,
       strict: false,
