@@ -587,9 +587,7 @@ router.get('/call/:username/:nsName/:funcName/:version', FunctionAccess, Gateway
     let beginTime = +new Date();
     let res = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionCall(ctx.funcId, "GET" ,ctx.query);
     let endTime = +new Date();
-    ctx.body = {
-      data: res ? res.res : '// no data'
-    };
+    ctx.body = res ? res.res : '// no data';
     report.reportSpeed(handler, endTime - beginTime).then().catch(e => console.log(e));
     report.reportInvoke(handler, 1).then().catch(e => console.log(e))
   } catch (e) {
@@ -609,9 +607,7 @@ router.post('/call/:username/:nsName/:funcName/:version', FunctionAccess, Gatewa
     let beginTime = +new Date();
     let res = await new GatewayService(ctx.GATEWAY_SERVICE, ctx.GATEWAY_TOKEN).FunctionCall(ctx.funcId, "POST", ctx.request.body);
     let endTime = +new Date();
-    ctx.body = {
-      data: res ? res.res : '// no data'
-    };
+    ctx.body = res ? res.res : '// no data';
     report.reportSpeed(handler, endTime - beginTime).then().catch(e => console.log(e));
     report.reportInvoke(handler, 1).then().catch(e => console.log(e))
   } catch (e) {
